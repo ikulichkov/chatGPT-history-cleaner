@@ -5,16 +5,22 @@
   "version_name": "1.1.2 - 2025-01-28 17:25",
   "description": "Скрывает предыдущие блоки сообщений для снижения нагрузки на компьютер",
   "permissions": [
-    "storage"
+    "storage",
+    "activeTab",
+    "scripting"
   ],
   "host_permissions": [
     "https://chatgpt.com/*",
+    "https://www.chatgpt.com/*",
+    "https://*.chatgpt.com/*",
     "https://*.openai.com/*"
   ],
   "content_scripts": [
     {
       "matches": [
         "https://chatgpt.com/*",
+        "https://www.chatgpt.com/*",
+        "https://*.chatgpt.com/*",
         "https://*.openai.com/*"
       ],
       "js": ["content.js"],

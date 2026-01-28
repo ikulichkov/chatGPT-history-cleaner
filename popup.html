@@ -12,8 +12,10 @@
     }
 
     body {
-      width: 320px;
+      width: 400px;
+      max-height: 600px;
       padding: 20px;
+      overflow-y: auto;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: #333;
@@ -147,6 +149,20 @@
       transform: translateY(0);
     }
 
+    .apply-btn {
+      background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+    }
+
+    .apply-btn:hover {
+      box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+    }
+
+    .apply-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
     .status {
       text-align: center;
       font-size: 12px;
@@ -239,6 +255,69 @@
     .version-info strong {
       color: #667eea;
     }
+
+    .debug-section {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid #e0e0e0;
+    }
+
+    .debug-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 8px;
+    }
+
+    .debug-actions {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .debug-actions .save-btn {
+      margin-top: 0;
+      flex: 1;
+      padding: 10px;
+      font-size: 12px;
+    }
+
+    .debug-actions .copy-btn {
+      background: linear-gradient(135deg, #455a64 0%, #37474f 100%);
+      flex: 0 0 auto;
+      min-width: 110px;
+    }
+
+    .debug-actions .copy-btn:hover {
+      box-shadow: 0 4px 12px rgba(55, 71, 79, 0.35);
+    }
+
+    #debugOut {
+      width: 100%;
+      min-height: 140px;
+      max-height: 220px;
+      padding: 8px;
+      font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+      font-size: 10px;
+      line-height: 1.35;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      resize: vertical;
+      background: #fafafa;
+      color: #222;
+    }
+
+    #debugOut:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .debug-hint {
+      font-size: 11px;
+      color: #888;
+      margin-top: 6px;
+      line-height: 1.35;
+    }
   </style>
 </head>
 <body>
@@ -282,6 +361,19 @@
     </div>
 
     <button class="save-btn" id="saveBtn">Сохранить настройки</button>
+    <button class="save-btn apply-btn" id="applyBtn">Применить очистку сейчас</button>
+    <div class="info-text">Используйте, если страница долго загружается и очистка не сработала.</div>
+
+    <div class="debug-section">
+      <div class="debug-title">Отладка для поддержки</div>
+      <div class="debug-actions">
+        <button type="button" class="save-btn" id="debugGatherBtn">Собрать данные</button>
+        <button type="button" class="save-btn copy-btn" id="debugCopyBtn">Копировать</button>
+      </div>
+      <textarea id="debugOut" readonly placeholder="Нажмите «Собрать данные» на вкладке с ChatGPT…"></textarea>
+      <div class="debug-hint">Откройте нужный чат, нажмите «Собрать данные», затем «Копировать» и вставьте JSON в сообщение.</div>
+    </div>
+
     <div class="status" id="status">Настройки сохранены!</div>
 
     <div class="stats-section" id="statsSection" style="display: none;">

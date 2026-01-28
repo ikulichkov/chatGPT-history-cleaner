@@ -12,6 +12,10 @@
   const firstNInput = document.getElementById('firstN');
   const lastNInput = document.getElementById('lastN');
   const saveBtn = document.getElementById('saveBtn');
+  const applyBtn = document.getElementById('applyBtn');
+  const debugGatherBtn = document.getElementById('debugGatherBtn');
+  const debugCopyBtn = document.getElementById('debugCopyBtn');
+  const debugOut = document.getElementById('debugOut');
   const status = document.getElementById('status');
   const statsSection = document.getElementById('statsSection');
   const statBefore = document.getElementById('statBefore');
@@ -153,13 +157,165 @@
   }
 
   // Показать статус сохранения
-  function showStatus() {
+  function showStatus(message = 'Настройки сохранены!', isError = false) {
+    status.textContent = message;
+    status.style.color = isError ? '#f44336' : '#4caf50';
     status.classList.add('show');
     setTimeout(() => {
       status.classList.remove('show');
     }, 2000);
   }
 
+  function isNoContentScriptError(msg) {
+    return (
+      typeof msg === 'string' &&
+      msg.indexOf('Receiving end does not exist') !== -1
+    );
+  }
+
+  /**
+   * Сообщение в content script; при «нет получателя» — программная инъекция и повтор.
+   */
+  function sendToTabContentScript(tabId, message, done) {
+    const run = (alreadyInjected) => {
+      chrome.tabs.sendMessage(tabId, message, (response) => {
+        if (!chrome.runtime.lastError) {
+          done(null, response);
+          return;
+        }
+        const errText = chrome.runtime.lastError.message;
+        if (!alreadyInjected && isNoContentScriptError(errText)) {
+          chrome.scripting.executeScript(
+            {
+              target: { tabId },
+              files: ['content.js']
+            },
+            () => {
+              if (chrome.runtime.lastError) {
+                done(chrome.runtime.lastError.message, null);
+                return;
+              }
+              chrome.scripting.insertCSS(
+                {
+                  target: { tabId },
+                  files: ['styles.css']
+                },
+                () => {
+                  setTimeout(() => run(true), 100);
+                }
+              );
+            }
+          );
+          return;
+        }
+        done(errText, null);
+      });
+    };
+    run(false);
+  }
+
+  function gatherDebugInfo() {
+    debugGatherBtn.disabled = true;
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      const tab = tabs && tabs[0];
+      if (!tab || !tab.id) {
+        debugOut.value = JSON.stringify(
+          { error: 'Нет активной вкладки' },
+          null,
+          2
+        );
+        showStatus('Откройте вкладку с ChatGPT', true);
+        debugGatherBtn.disabled = false;
+        return;
+      }
+
+      sendToTabContentScript(tab.id, { action: 'getDebugInfo' }, (err, response) => {
+        debugGatherBtn.disabled = false;
+        if (err) {
+          debugOut.value = JSON.stringify(
+            {
+              error: err,
+              tabUrl: tab.url || null,
+              hint:
+                'Откройте вкладку с чатом (chatgpt.com / openai.com), обновите страницу (F5) после установки расширения. Страницы chrome:// и магазин расширений не поддерживаются.'
+            },
+            null,
+            2
+          );
+          showStatus('Не удалось собрать отладку', true);
+          return;
+        }
+        if (!response || !response.ok) {
+          debugOut.value = JSON.stringify(
+            response || { error: 'Пустой ответ' },
+            null,
+            2
+          );
+          showStatus('Ошибка сбора', true);
+          return;
+        }
+        debugOut.value = JSON.stringify(response.debug, null, 2);
+        showStatus('Данные собраны', false);
+      });
+    });
+  }
+
+  function copyDebugOut() {
+    const text = debugOut.value.trim();
+    if (!text) {
+      showStatus('Сначала соберите данные', true);
+      return;
+    }
+    navigator.clipboard.writeText(text).then(
+      () => showStatus('Скопировано в буфер', false),
+      () => {
+        debugOut.focus();
+        debugOut.select();
+        try {
+          document.execCommand('copy');
+          showStatus('Скопировано', false);
+        } catch (e) {
+          showStatus('Копирование не удалось', true);
+        }
+      }
+    );
+  }
+
+  function forceApplyCleaner() {
+    applyBtn.disabled = true;
+    showStatus('Запускаю очистку...', false);
+
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      const activeTab = tabs && tabs[0];
+      if (!activeTab || !activeTab.id) {
+        showStatus('Откройте вкладку с ChatGPT', true);
+        applyBtn.disabled = false;
+        return;
+      }
+
+      sendToTabContentScript(
+        activeTab.id,
+        { action: 'forceApplyCleaner' },
+        (err, response) => {
+          if (err) {
+            console.warn('Force apply error:', err);
+            showStatus('Не удалось запустить очистку', true);
+            applyBtn.disabled = false;
+            return;
+          }
+
+          if (response && response.ok) {
+            showStatus('Очистка запущена', false);
+          } else if (response && response.reason === 'not_ready') {
+            showStatus('Страница еще загружается', true);
+          } else {
+            showStatus('Не удалось запустить очистку', true);
+          }
+          applyBtn.disabled = false;
+        }
+      );
+    });
+  }
   // Переключение включено/выключено
   toggleEnabled.addEventListener('click', () => {
     toggleEnabled.classList.toggle('active');
@@ -190,6 +346,12 @@
 
   // Сохранение при нажатии кнопки
   saveBtn.addEventListener('click', saveSettings);
+
+  // Принудительное применение очистки
+  applyBtn.addEventListener('click', forceApplyCleaner);
+
+  debugGatherBtn.addEventListener('click', gatherDebugInfo);
+  debugCopyBtn.addEventListener('click', copyDebugOut);
   
   // Сохранение при изменении значений
   firstNInput.addEventListener('change', saveSettings);
