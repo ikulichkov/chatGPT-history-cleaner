@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat History Cleaner</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      width: 320px;
+      padding: 20px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #333;
+    }
+
+    .container {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      font-size: 20px;
+      margin-bottom: 20px;
+      color: #333;
+      text-align: center;
+    }
+
+    .setting-group {
+      margin-bottom: 20px;
+    }
+
+    .toggle-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .toggle-label {
+      font-size: 14px;
+      font-weight: 500;
+      color: #555;
+    }
+
+    .toggle-switch {
+      position: relative;
+      width: 50px;
+      height: 26px;
+      background: #ccc;
+      border-radius: 13px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .toggle-switch.active {
+      background: #667eea;
+    }
+
+    .toggle-switch::after {
+      content: '';
+      position: absolute;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: white;
+      top: 2px;
+      left: 2px;
+      transition: transform 0.3s;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .toggle-switch.active::after {
+      transform: translateX(24px);
+    }
+
+    .input-group {
+      margin-top: 15px;
+    }
+
+    .input-label {
+      display: block;
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 8px;
+    }
+
+    .input-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    input[type="number"] {
+      flex: 1;
+      padding: 10px;
+      border: 2px solid #e0e0e0;
+      border-radius: 6px;
+      font-size: 14px;
+      transition: border-color 0.3s;
+    }
+
+    input[type="number"]:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    input[type="number"]:disabled {
+      background: #f5f5f5;
+      cursor: not-allowed;
+    }
+
+    .info-text {
+      font-size: 12px;
+      color: #888;
+      margin-top: 8px;
+      line-height: 1.4;
+    }
+
+    .save-btn {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      margin-top: 10px;
+    }
+
+    .save-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    .save-btn:active {
+      transform: translateY(0);
+    }
+
+    .status {
+      text-align: center;
+      font-size: 12px;
+      color: #4caf50;
+      margin-top: 10px;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .status.show {
+      opacity: 1;
+    }
+
+    .stats-section {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid #e0e0e0;
+    }
+
+    .stats-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .stat-item {
+      background: #f8f9fa;
+      padding: 10px;
+      border-radius: 6px;
+      text-align: center;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: #666;
+      margin-bottom: 4px;
+    }
+
+    .stat-value {
+      font-size: 16px;
+      font-weight: 600;
+      color: #667eea;
+    }
+
+    .stat-saved {
+      background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+      color: white;
+      padding: 12px;
+      border-radius: 6px;
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    .stat-saved .stat-label {
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 12px;
+      margin-bottom: 4px;
+    }
+
+    .stat-saved .stat-value {
+      color: white;
+      font-size: 20px;
+    }
+
+    .stats-empty {
+      text-align: center;
+      color: #999;
+      font-size: 12px;
+      padding: 10px;
+    }
+
+    .version-info {
+      text-align: center;
+      font-size: 10px;
+      color: #999;
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px solid #e0e0e0;
+    }
+
+    .version-info strong {
+      color: #667eea;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🧹 Chat History Cleaner</h1>
+    
+    <div class="setting-group">
+      <div class="toggle-container">
+        <span class="toggle-label">Включить очистку</span>
+        <div class="toggle-switch" id="toggleEnabled"></div>
+      </div>
+      
+      <div class="input-group">
+        <label class="input-label" for="firstN">Количество первых блоков:</label>
+        <div class="input-container">
+          <input 
+            type="number" 
+            id="firstN" 
+            min="0" 
+            value="5"
+            disabled
+          >
+        </div>
+        <label class="input-label" for="lastN" style="margin-top: 10px;">Количество последних блоков:</label>
+        <div class="input-container">
+          <input 
+            type="number" 
+            id="lastN" 
+            min="1" 
+            value="5"
+            disabled
+          >
+        </div>
+        <div class="info-text" style="margin-top: 10px;">
+          <strong>Логика очистки:</strong><br>
+          Оставляются первые N и последние N блоков сообщений.<br>
+          Блоки в середине полностью удаляются из DOM для снижения нагрузки.<br>
+          После очистки расширение завершает работу.
+        </div>
+      </div>
+    </div>
+
+    <button class="save-btn" id="saveBtn">Сохранить настройки</button>
+    <div class="status" id="status">Настройки сохранены!</div>
+
+    <div class="stats-section" id="statsSection" style="display: none;">
+      <div class="stats-title">📊 Статистика</div>
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-label">До очистки</div>
+          <div class="stat-value" id="statBefore">-</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">После очистки</div>
+          <div class="stat-value" id="statAfter">-</div>
+        </div>
+      </div>
+      <div class="stat-saved" id="statSaved" style="display: none;">
+        <div class="stat-label">Экономия</div>
+        <div class="stat-value" id="statSavedValue">-</div>
+      </div>
+      <div class="stats-empty" id="statsEmpty">Статистика появится после применения очистки</div>
+    </div>
+
+    <div class="version-info" id="versionInfo">
+      <strong>Версия:</strong> <span id="versionNumber">-</span><br>
+      <strong>Обновлено:</strong> <span id="versionDate">-</span>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
